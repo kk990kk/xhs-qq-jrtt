@@ -1,219 +1,176 @@
-// 设备分辨率：1080x2400
-setScreenMetrics(1080, 2400);
-auto.waitFor();
+// ====== 以小红书启动为标志自动运行一次 ======
 
-// 智能解锁和设备唤醒
-if (!device.isScreenOn()) {
-    device.wakeUp();
-    sleep(1500);
+// 监听小红书App启动
+while (true) {
+    let pkg = currentPackage();
+    if (pkg === "com.xingin.xhs") {
+        toast("检测到小红书已启动，开始自动化流程");
+        break;
+    }
+    sleep(1000);
 }
 
-// 启动小红书
-app.launch("com.xingin.xhs");
-sleep(500);
+// ====== 主流程函数 ======
+function main() {
+    setScreenMetrics(1080, 2400);
+    auto.waitFor();
 
-// 用户友好提示
-//toast("请选择要分享的文章");
+    if (!device.isScreenOn()) {
+        device.wakeUp();
+        sleep(1500);
+    }
 
-// 点击分享按钮并尝试复制链接，失败则重试
-let maxRetry = 3;
-let retry = 0;
-while (retry < maxRetry) {
-   // 等待并点击分享按钮，直到找到为止
-    while (true) {
-        let shareBtn = id("moreOperateIV").findOne(3000);
-        if (shareBtn) {
-            shareBtn.click();
-            sleep(1000);
-            break; // 找到并点击后跳出内层循环
+    // 点击分享按钮并尝试复制链接，失败则重试
+    let maxRetry = 3;
+    let retry = 0;
+    while (retry < maxRetry) {
+        while (true) {
+            let shareBtn = id("moreOperateIV").findOne(3000);
+            if (shareBtn) {
+                shareBtn.click();
+                sleep(1000);
+                break;
+            } else {
+                sleep(1000);
+            }
+        }
+        let copyBtn = desc("复制链接").findOne(3000);
+        if (copyBtn) {
+            let b = copyBtn.bounds();
+            click(b.centerX(), b.centerY());
+            sleep(800);
+            break;
         } else {
-            // click(1006, 190); // 备用坐标
+            toast("未找到复制链接按钮，重试第" + (retry + 1) + "次");
+            retry++;
             sleep(1000);
+            if (retry == maxRetry) {
+                toast("多次未找到复制链接按钮，退出");
+                return;
+            }
         }
     }
 
-    // 查找复制链接按钮
-    let copyBtn = desc("复制链接").findOne(3000);
-    if (copyBtn) {
-        let b = copyBtn.bounds();
-        click(b.centerX(), b.centerY());
+    let backBtn = id("0_resource_name_obfuscated").className("android.widget.Button").desc("返回").findOne(3000);
+    if (backBtn) {
+        backBtn.click();
         sleep(800);
-        break; // 找到并点击后跳出循环
     } else {
-        toast("未找到复制链接按钮，重试第" + (retry + 1) + "次");
-        retry++;
-        sleep(1000);
-        if (retry == maxRetry) {
-            toast("多次未找到复制链接按钮，退出");
-            exit();
-        }
+        toast("未找到返回按钮，使用坐标点击兜底");
+        click(51, 187);
+        sleep(800);
     }
-}
-// 返回
-let backBtn = id("0_resource_name_obfuscated").className("android.widget.Button").desc("返回").findOne(3000);
-if (backBtn) {
-    backBtn.click();
-    sleep(800);
-} else {
-    toast("未找到返回按钮，使用坐标点击兜底");
-    click(51, 187);
-    sleep(800);
-}
 
-// 返回桌面
-home();
-sleep(200);
+    home();
+    sleep(200);
 
-// 查找并点击桌面上的“球球去水印”快捷方式
-let qqShortcut = desc("球球去水印").findOne(5000);
-if (!qqShortcut) {
-    qqShortcut = text("球球去水印").findOne(5000);
-}
-if (qqShortcut) {
-    qqShortcut.click();
-    sleep(1500); // 等待小程序加载
-} else {
-    toast("未找到球球去水印快捷方式");
-    exit();
-}
-// 粘贴链接
-click(908, 355); // 点击输入框
-sleep(1500);
-
-// 提取素材
-click(553, 834); // 立即提取
-sleep(5000); // 增加处理时间
-
-// 保存图片
-click(756, 2266); // 保存全部图片
-sleep(7000); // 等待7秒，确保图片保存完成
-
-// 复制标题
-click(892,622);
-sleep(800);
-click(1009, 697); // 点击标题
-sleep(800);
-
-back();
-sleep(500);
-
-sleep(200);
-// 打开今日头条
-app.launch("com.ss.android.article.news");
-sleep(2000);
-
-/* let myText = text("我的").findOne(3000);
-if (myText) {
-    // 获取父控件（一般为可点击的容器）
-    let parent = myText.parent();
-    // 检查父控件是否可点击
-    if (parent && parent.clickable()) {
-        // toast("点击父级容器");
-        parent.click();
+    let qqShortcut = desc("球球去水印").findOne(5000);
+    if (!qqShortcut) {
+        qqShortcut = text("球球去水印").findOne(5000);
+    }
+    if (qqShortcut) {
+        qqShortcut.click();
+        sleep(1500);
     } else {
-        // 兜底用坐标点击
-        let b = parent ? parent.bounds() : myText.bounds();
-        click(b.centerX(), b.centerY());
+        toast("未找到球球去水印快捷方式");
+        return;
     }
-    sleep(1000);
-} */
 
-// 点击发布按钮
-let publishBtn = id("hr7").findOne(10000);
-if (publishBtn) {
-    publishBtn.click();
-    sleep(2000);
-} else {
-    toast("未找到发布按钮");
-    exit();
-}
-
-// 查找并点击“文章”按钮的FrameLayout
-let articleBtn = className("android.widget.FrameLayout").bounds(0, 2262, 270, 2400).findOne(3000);
-if (articleBtn) {
-    articleBtn.click();
-    sleep(1000);
-} else {
-    toast("未找到文章按钮");
-    click(135, 2331); // 取按钮中心点
-    sleep(1000);
-    exit();
-}
-
-// 粘贴标题
-click(268, 308); // 点击标题输入框
-sleep(500);
-click(952,2317);
-sleep(500);
-click(517,1699); 
-sleep(500);
-click(195,607);
-sleep(500);
-// 添加图片
-let addPicBtn = className("android.widget.Button").desc("添加图片").findOne(5000);
-if (addPicBtn) {
-    addPicBtn.click();
+    click(908, 355);
     sleep(1500);
-} else {
-    toast("未找到添加图片按钮");
-    exit();
-}
+    click(553, 834);
+    sleep(5000);
+    click(756, 2266);
+    sleep(7000);
 
-// 用户手动调整图片顺序
-toast("请手动调整图片顺序");
+    click(892,622);
+    sleep(800);
+    click(1009, 697);
+    sleep(800);
 
-// 等待用户选择图片并点击完成按钮
-let completed = false;
-let maxWaitTime = 60; // 最大等待时间（秒）
-let waitCount = 0;
+    back();
+    sleep(500);
+    sleep(200);
 
-while (!completed && waitCount < maxWaitTime) {
-    if (id("brn").exists()) {
-        toast("完成按钮已出现，等待用户点击...");
-        console.log("完成按钮已出现，等待用户点击...");
-        // 等待用户点击完成按钮
-        while (id("brn").exists()) {
-            sleep(500);
-        }
-        completed = true;
+    // 打开今日头条
+    app.launch("com.ss.android.article.news");
+    sleep(2000);
+
+    let publishBtn = id("hr7").findOne(10000);
+    if (publishBtn) {
+        publishBtn.click();
+        sleep(1500);
     } else {
-        toast("等待完成按钮出现：${waitCount * 0.5}秒");
-        console.log("等待完成按钮出现：${waitCount * 0.5}秒");
-        sleep(500);
-        waitCount++;
+        toast("未找到发布按钮");
+        return;
     }
-}
 
-if (!completed) {
-    toast("等待超时，退出脚本");
-    console.log("等待超时，退出脚本");
-    exit();
-}
+    let articleBtn = className("android.widget.FrameLayout").bounds(0, 2262, 270, 2400).findOne(3000);
+    if (articleBtn) {
+        articleBtn.click();
+        sleep(1000);
+    } else {
+        toast("未找到文章按钮");
+        click(135, 2331);
+        sleep(1000);
+        return;
+    }
 
-
-// 点击“下一步”按钮
-let nextBtn = id("mpd").className("android.widget.Button").text("下一步").findOne(5000);
-if (nextBtn) {
-    nextBtn.click();
+    click(268, 308);
     sleep(500);
-} else {
-    click(945,160); // 兜底用坐标点击
-    exit();
-}
-
-// 确认发布按钮
-let publishBtn2 = id("byp").className("android.widget.TextView").text("发布").desc("发布").findOne(5000);
-if (publishBtn2 && publishBtn2.clickable()) {
-    publishBtn2.click();
+    click(952,2317);
     sleep(500);
-} else {
-    toast("未找到‘发布’按钮");
-    exit();
+    click(517,1699);
+    sleep(500);
+    click(195,607);
+    sleep(500);
+
+    let addPicBtn = className("android.widget.Button").desc("添加图片").findOne(5000);
+    if (addPicBtn) {
+        addPicBtn.click();
+        sleep(1500);
+    } else {
+        toast("未找到添加图片按钮");
+        return;
+    }
+
+    toast("请手动选择图片并点击完成按钮");
+    // 等待用户选择图片并点击完成按钮
+    // 等待“完成”按钮出现（用户至少选择了一张图片）
+    while (!id("brn").exists()) {
+        toast("等待用户选择图片...");
+        sleep(500);
+    }
+    toast("完成按钮已出现，等待用户调整顺序并点击完成...");
+    // 等待“完成”按钮消失（用户点击了完成，进入下一步）
+    while (id("brn").exists()) {
+        sleep(500);
+    }
+    // 增加等待，确保页面切换完成
+    sleep(1500);
+
+    let nextBtn = id("mpd").className("android.widget.Button").text("下一步").findOne(5000);
+    if (nextBtn) {
+        nextBtn.click();
+        sleep(500);
+    } else {
+        click(945,160);
+        return;
+    }
+
+    let publishBtn2 = id("byp").className("android.widget.TextView").text("发布").desc("发布").findOne(5000);
+    if (publishBtn2 && publishBtn2.clickable()) {
+        publishBtn2.click();
+        sleep(500);
+    } else {
+        toast("未找到‘发布’按钮");
+        return;
+    }
+
+    sleep(4000);
+    toast("内容已发布");
+    home();
 }
 
-// 等待发布完成
-sleep(4000);
-toast("内容已发布");
-
-// 返回桌面
-home();
+// ====== 调用主流程 ======
+main();
