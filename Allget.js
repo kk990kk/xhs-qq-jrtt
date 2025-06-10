@@ -77,7 +77,7 @@ function main() {
     }
 
     click(908, 355);
-    sleep(1500);
+    sleep(1000);
     click(553, 834);
     sleep(5000);
     click(756, 2266);
@@ -134,29 +134,19 @@ function main() {
         return;
     }
 
-    toast("请手动选择图片并点击完成按钮");
-    // 等待用户选择图片并点击完成按钮
-    // 等待“完成”按钮出现（用户至少选择了一张图片）
-    while (!id("brn").exists()) {
-        toast("等待用户选择图片...");
+    toast("请手动选择图片、调整顺序并点击完成，然后等待下一步按钮出现");
+    // 循环等待“下一步”按钮出现，出现后等待1秒再点击
+    let nextBtn;
+    while (true) {
+        nextBtn = id("mpd").className("android.widget.Button").text("下一步").findOne(1000);
+        if (nextBtn) {
+            sleep(1000);
+            break;
+        }
         sleep(500);
     }
-    toast("完成按钮已出现，等待用户调整顺序并点击完成...");
-    // 等待“完成”按钮消失（用户点击了完成，进入下一步）
-    while (id("brn").exists()) {
-        sleep(500);
-    }
-    // 增加等待，确保页面切换完成
-    sleep(1500);
-
-    let nextBtn = id("mpd").className("android.widget.Button").text("下一步").findOne(5000);
-    if (nextBtn) {
-        nextBtn.click();
-        sleep(500);
-    } else {
-        click(945,160);
-        return;
-    }
+    nextBtn.click();
+    sleep(500);
 
     let publishBtn2 = id("byp").className("android.widget.TextView").text("发布").desc("发布").findOne(5000);
     if (publishBtn2 && publishBtn2.clickable()) {
@@ -173,4 +163,7 @@ function main() {
 }
 
 // ====== 调用主流程 ======
-main();
+while (true) {
+    main();
+    sleep(2000); // 每次循环间隔2秒，可根据需要调整
+}
